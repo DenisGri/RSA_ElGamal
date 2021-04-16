@@ -20,6 +20,7 @@ namespace RSA_ElGamal
 
             string text = Console.ReadLine()?.ToUpper();
             text = text?.Replace("\\s", "");
+
             long r = p * q;
             long f = (p - 1) * (q - 1);
             long e = GetE(f);
@@ -37,38 +38,19 @@ namespace RSA_ElGamal
             Console.WriteLine("Decryption: " + decryptMessage);
         }
 
-        private static bool IsMutuallySimple(long a, long b)
+        private static List<string> RsaEncrypt(string s, long e, long r)
         {
-            if (a == b)
-            {
-                return a == 1;
-            }
-            else
-            {
-                if (a > b)
-                {
-                    return IsMutuallySimple(a - b, b);
-                }
-                else
-                {
-                    return IsMutuallySimple(b - a, a);
-                }
-            }
+            return (from t in s select (int) t into index select Power(index, e, r) into res select res.ToString())
+                .ToList();
         }
 
-        private static bool IsPrime(long a)
+        private static string RsaDecrypt(IEnumerable<string> input, long d, long r)
         {
-            for (long i = 2; i <= Math.Sqrt(a); i++)
-            {
-                if (a % i == 0)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return input.Select(long.Parse)
+                .Select(b => (int) Power(b, d, r))
+                .Aggregate("", (current, index) => current + (char) (index));
         }
-
+        
         private static long GetE(long f)
         {
             var valArr = new List<long>();
@@ -116,17 +98,36 @@ namespace RSA_ElGamal
                 return (x * z * z) % n;
         }
 
-        private static List<string> RsaEncrypt(string s, long e, long r)
+        private static bool IsMutuallySimple(long a, long b)
         {
-            return (from t in s select (int) t into index select Power(index, e, r) into res select res.ToString())
-                .ToList();
+            if (a == b)
+            {
+                return a == 1;
+            }
+            else
+            {
+                if (a > b)
+                {
+                    return IsMutuallySimple(a - b, b);
+                }
+                else
+                {
+                    return IsMutuallySimple(b - a, a);
+                }
+            }
         }
 
-        private static string RsaDecrypt(IEnumerable<string> input, long d, long r)
+        private static bool IsPrime(long a)
         {
-            return input.Select(long.Parse)
-                .Select(b => (int) Power(b, d, r))
-                .Aggregate("", (current, index) => current + (char) (index));
+            for (long i = 2; i <= Math.Sqrt(a); i++)
+            {
+                if (a % i == 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private class TempValuesGcd
