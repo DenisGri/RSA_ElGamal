@@ -50,7 +50,7 @@ namespace RSA_ElGamal
                 .Select(b => (int) Power(b, d, r))
                 .Aggregate("", (current, index) => current + (char) (index));
         }
-        
+
         private static long GetE(long f)
         {
             var valArr = new List<long>();
@@ -88,14 +88,16 @@ namespace RSA_ElGamal
 
         private static long Power(long x, long y, long n)
         {
-            if (y == 0) return 1;
+            if (y == 0)
+            {
+                return 1;
+            }
 
             var z = Power(x, y / 2, n);
 
-            if (y % 2 == 0)
-                return (z * z) % n;
-            else
-                return (x * z * z) % n;
+            if (y % 2 == 0) return (z * z) % n;
+
+            return (x * z * z) % n;
         }
 
         private static bool IsMutuallySimple(long a, long b)
