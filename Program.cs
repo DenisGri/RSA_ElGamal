@@ -1,45 +1,142 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RSA_ElGamal
 {
-    class Program
+    static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-        }
+            Console.WriteLine("Write prime number p:");
+            long p = long.Parse(Console.ReadLine() ?? string.Empty);
+            Console.WriteLine("Write prime number q:");
+            long q = long.Parse(Console.ReadLine() ?? string.Empty);
+            Console.WriteLine("Write encrypted text:");
 
-        //функция быстрого возведения в степень
-        //Пусть m=(mkmk−1...m1m0)2 — двоичное представление степени n
-        //Тогда n=mk⋅2k+mk−1⋅2k−1+...+m1⋅2+m0, где mk=1,mi∈{0,1} и xn=x^((...((mk⋅2+mk−1)⋅2+mk−2)⋅2+...)⋅2+m1)⋅2+m0
-        public static int fastPower(int value, int pow){
-            int valueTemp = value;
-            int powTemp = pow;
-            int toReturn = 1;
+            string text = Console.ReadLine()?.ToUpper();
+            text = text?.Replace("\\s", "");
+            long r = p * q;
+            long f = (p - 1) * (q - 1);
+            long e = GetE(f);
 
-            while(powTemp > 0){
-                if (powTemp % 2 == 1){
-                    toReturn *= valueTemp;
-                }
-
-                valueTemp *= valueTemp;
-                powTemp /= 2;
+            TempValuesGcd temp = GetExtendGcd(f, e);
+            long d = temp.Y;
+            if (d < 0)
+            {
+                d += f;
             }
 
-            return toReturn;
+            var encryptMessage = RsaEncrypt(text, e, r);
+            Console.WriteLine("Encryption: " + string.Join(" ", encryptMessage.ToArray()));
+            var decryptMessage = RsaDecrypt(encryptMessage, d, r);
+            Console.WriteLine("Decryption: " + decryptMessage);
         }
 
-        //расширенный алгоритм Евклида для вычисления НОД
-        //умножение чисел всегда быстрее, чем разложение результата на простые множители
-        public static int extEuclid()
+        private static bool IsMutuallySimple(long a, long b)
         {
-            return 0;
+            if (a == b)
+            {
+                return a == 1;
+            }
+            else
+            {
+                if (a > b)
+                {
+                    return IsMutuallySimple(a - b, b);
+                }
+                else
+                {
+                    return IsMutuallySimple(b - a, a);
+                }
+            }
         }
 
-        public static int fi(int p, int q){
-            int toReturn = (p - 1) * (q - 1);
-            return toReturn;
+        private static bool IsPrime(long a)
+        {
+            for (long i = 2; i <= Math.Sqrt(a); i++)
+            {
+                if (a % i == 0)
+                {
+                    return false;
+                }
+            }
 
+            return true;
+        }
+
+        private static long GetE(long f)
+        {
+            var valArr = new List<long>();
+            var e = f - 1;
+            for (var i = 2; i < f; i++)
+            {
+                if (IsPrime(e) && IsMutuallySimple(e, f))
+                {
+                    valArr.Add(e);
+                }
+
+                e--;
+            }
+
+            Random random = new();
+            var index = random.Next(valArr.Count);
+            return valArr[index];
+        }
+
+        private static TempValuesGcd GetExtendGcd(long a, long b)
+        {
+            if (b == 0)
+            {
+                return new TempValuesGcd(a, 1, 0);
+            }
+            else
+            {
+                var tmp = GetExtendGcd(b, a % b);
+                var d = tmp.D;
+                var y = tmp.X - tmp.Y * (a / b);
+                var x = tmp.Y;
+                return new TempValuesGcd(d, x, y);
+            }
+        }
+
+        private static long Power(long x, long y, long n)
+        {
+            if (y == 0) return 1;
+
+            var z = Power(x, y / 2, n);
+
+            if (y % 2 == 0)
+                return (z * z) % n;
+            else
+                return (x * z * z) % n;
+        }
+
+        private static List<string> RsaEncrypt(string s, long e, long r)
+        {
+            return (from t in s select (int) t into index select Power(index, e, r) into res select res.ToString())
+                .ToList();
+        }
+
+        private static string RsaDecrypt(IEnumerable<string> input, long d, long r)
+        {
+            return input.Select(long.Parse)
+                .Select(b => (int) Power(b, d, r))
+                .Aggregate("", (current, index) => current + (char) (index));
+        }
+
+        private class TempValuesGcd
+        {
+            public TempValuesGcd(long d, long x, long y)
+            {
+                D = d;
+                X = x;
+                Y = y;
+            }
+
+            public long D { get; }
+            public long X { get; }
+            public long Y { get; }
         }
     }
 }
